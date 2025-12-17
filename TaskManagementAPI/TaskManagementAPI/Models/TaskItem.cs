@@ -6,6 +6,7 @@ public class TaskItem
     public required string Title { get; set; } // required: Bắt buộc phải có
     public string? Description { get; set; }   // ?: Có thể null
     public bool IsCompleted { get; set; }
+    public string Status { get; set; } = "TODO";
     public DateTime? DueDate { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
