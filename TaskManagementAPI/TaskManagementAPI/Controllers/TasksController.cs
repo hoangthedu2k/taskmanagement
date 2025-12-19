@@ -3,7 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaskManagerApi.Data;
 using TaskManagerApi.Models;
-
+using Microsoft.AspNetCore.SignalR; // Import
+using TaskManagerApi.Hubs;          // Import
 namespace TaskManagerApi.Controllers;
 
 [Route("api/[controller]")]
@@ -12,10 +13,11 @@ namespace TaskManagerApi.Controllers;
 public class TasksController : ControllerBase
 {
     private readonly AppDbContext _context;
-
-    public TasksController(AppDbContext context)
+    private readonly IHubContext<TaskHub> _hubContext; // Thêm HubContext
+    public TasksController(AppDbContext context, IHubContext<TaskHub> hubContext)
     {
         _context = context;
+        _hubContext = hubContext;
     }
 
     // 1. GET: api/tasks (Lấy danh sách)
@@ -42,6 +44,7 @@ public class TasksController : ControllerBase
         _context.Tasks.Add(task);
         await _context.SaveChangesAsync();
 
+        await _hubContext.Clients.All.SendAsync("TaskCreated", task); // Gửi thông báo tới tất cả client
         return CreatedAtAction(nameof(GetTask), new { id = task.Id }, task);
     }
 
@@ -57,6 +60,7 @@ public class TasksController : ControllerBase
         {
           
             await _context.SaveChangesAsync();
+            await _hubContext.Clients.All.SendAsync("TaskUpdated", task); // Gửi thông báo tới tất cả client
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -76,6 +80,7 @@ public class TasksController : ControllerBase
 
         _context.Tasks.Remove(task);
         await _context.SaveChangesAsync();
+        await _hubContext.Clients.All.SendAsync("TaskDeleted", id); // Gửi thông báo tới tất cả client
 
         return NoContent();
     }
